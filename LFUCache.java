@@ -43,7 +43,7 @@ public class LFUCache {
             if(count > o.count) return 1;
             else if (count < o.count) return -1;
             else {
-                return time == o.count ? 0 : time > o.count ? 1 : -1;
+                return time == o.count ? 0 : time < o.count ? 1 : -1;
             }
         }
 
