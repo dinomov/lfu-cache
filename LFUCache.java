@@ -39,11 +39,12 @@ public class LFUCache {
         }
 
         @Override
-        public int compareTo(Item o) {
-            if(count > o.count) return 1;
-            else if (count < o.count) return -1;
-            else {
-                return time == o.count ? 0 : time < o.count ? 1 : -1;
+        public int compareTo(Item other) {
+            // Compare items based on count and then last time used
+            if (this.count != other.count) {
+                return Integer.compare(this.count, other.count);
+            } else {
+                return Long.compare(this.time, other.time);
             }
         }
 
@@ -59,7 +60,7 @@ public class LFUCache {
 
     LFUCache(int capacity) {
         this.capacity = capacity;
-        queue = new PriorityQueue<>(capacity);
+        queue = new PriorityQueue<>(capacity, Comparator.reverseOrder());
         map = new HashMap<>();
     }
 
@@ -71,6 +72,7 @@ public class LFUCache {
         Item item = map.get(key);
         item.count++;
         item.time = new Date().getTime();
+        refreshQueue();
         return item.value;
     }
 
@@ -80,6 +82,7 @@ public class LFUCache {
             item.count++;
             item.time = new Date().getTime();
             item.value = value;
+            refreshQueue();
         } else {
             if(map.size() == capacity) {
                 Item item = queue.poll();
@@ -91,6 +94,12 @@ public class LFUCache {
         }
     }
 
+    void refreshQueue() {
+        // this is necessary to sort again, otherwise queue does not see change and do not sort
+        queue.clear();
+        queue.addAll(map.values());
+    }
+
     public static void main(String[] args) {
         // Create a LFU cache with capacity 2
         LFUCache cache = new LFUCache(2);
@@ -98,20 +107,21 @@ public class LFUCache {
         // Insert key-value pairs
         cache.put(1, 1);
         System.out.println("Put key 1 value=" + 1); // put: 1
-        System.out.println(cache.map);
+        System.out.println(cache.queue);
         cache.put(2, 2);
         System.out.println("Put key 2 value=" + 2); // put: 1
-        System.out.println(cache.map);
+        System.out.println(cache.queue);
         // Retrieve values
         System.out.println("Getting key 1 value=" + cache.get(1)); // Output: 1
-        System.out.println(cache.map);
+        System.out.println(cache.queue);
+       // System.out.println("Getting key 2 value=" + cache.get(2)); // Output: 2
+       // System.out.println(cache.queue);
 
         // Insert a new key-value pair, evicts key 2 since it is least frequently used
         System.out.println("Put key 3 value=" + 3); // put: 3
         System.out.println("Insert a new key-value pair, evicts key 2 since it is least frequently used");
         cache.put(3, 3);
-
-        System.out.println(cache.map);
+        System.out.println(cache.queue);
 
         // Retrieve values, key 1 should be evicted
         System.out.println("Retrieve values, key 1 should be evicted, return " + cache.get(1)); // Output: -1
